@@ -1,0 +1,22 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://xmlns.oracle.com/apps/hcm/processFlows/core/flowActionsService/types/" xmlns:flow="http://xmlns.oracle.com/apps/hcm/processFlows/core/flowControllerService/">
+   <soapenv:Header/>
+   <soapenv:Body>
+   <typ:submitFlow>
+         <typ:flowName>DLT_Test_Extract</typ:flowName>
+
+         <typ:parameterValues>
+            <flow:ParameterName>Effective Date</flow:ParameterName>
+            <flow:ParameterValue>2017-05-15</flow:ParameterValue>
+         </typ:parameterValues>
+
+         <typ:parameterValues>
+            <flow:ParameterName>Changes Only</flow:ParameterName>
+            <flow:ParameterValue>ATTRIB_OLD</flow:ParameterValue>
+         </typ:parameterValues>
+
+         <typ:flowInstanceName>DLT_Test_Extract_20170515_001</typ:flowInstanceName>
+         <typ:recurringFlag>false</typ:recurringFlag>
+
+   </typ:submitFlow>
+   </soapenv:Body>
+</soapenv:Envelope>
