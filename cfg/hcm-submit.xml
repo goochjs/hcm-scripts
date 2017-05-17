@@ -2,11 +2,11 @@
    <soapenv:Header/>
    <soapenv:Body>
    <typ:submitFlow>
-         <typ:flowName>DLT_Test_Extract</typ:flowName>
+         <typ:flowName>JOBNAME</typ:flowName>
 
          <typ:parameterValues>
             <flow:ParameterName>Effective Date</flow:ParameterName>
-            <flow:ParameterValue>2017-05-15</flow:ParameterValue>
+            <flow:ParameterValue>DATESTAMP</flow:ParameterValue>
          </typ:parameterValues>
 
          <typ:parameterValues>
@@ -14,7 +14,7 @@
             <flow:ParameterValue>ATTRIB_OLD</flow:ParameterValue>
          </typ:parameterValues>
 
-         <typ:flowInstanceName>DLT_Test_Extract_20170515_001</typ:flowInstanceName>
+         <typ:flowInstanceName>JOBNAME_DATESTAMP_TIMESTAMP</typ:flowInstanceName>
          <typ:recurringFlag>false</typ:recurringFlag>
 
    </typ:submitFlow>

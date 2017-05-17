@@ -1,0 +1,9 @@
+<soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:typ="http://xmlns.oracle.com/apps/hcm/processFlows/core/flowActionsService/types/">
+   <soapenv:Header/>
+   <soapenv:Body>
+      <typ:getFlowTaskInstanceStatus>
+         <typ:flowInstanceName>JOBNAME_DATESTAMP_TIMESTAMP</typ:flowInstanceName>
+         <typ:flowTaskInstanceName>JOBNAME</typ:flowTaskInstanceName>
+      </typ:getFlowTaskInstanceStatus>
+   </soapenv:Body>
+</soapenv:Envelope>
