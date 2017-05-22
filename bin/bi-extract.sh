@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Oracle HCM data extract script
+# Oracle BI report execution script
 # Run with -h parameter for usage
 
 
@@ -11,21 +11,22 @@ _DEBUG="off"
 ## script settings
 SCRIPTDIR=$(dirname $0)
 SCRIPTNAME=$(basename $0)
+NOTIFICATIONEMAIL="jeremy.gooch@sainsburys.co.uk"
 
 ## curl control
 REQUEST_DIR="/tmp/${SCRIPTNAME}/request"
 RESPONSE_DIR="/tmp/${SCRIPTNAME}/response"
-SUBMIT_FILE_ORIG=${SCRIPTDIR}/../cfg/hcm-submit.xml
-SUBMIT_FILE=${REQUEST_DIR}/hcm-submit_$(date +%Y%m%d%H%M%S).xml
-STATUS_FILE_ORIG=${SCRIPTDIR}/../cfg/hcm-status.xml
-STATUS_FILE=${REQUEST_DIR}/hcm-status_$(date +%Y%m%d%H%M%S).xml
+SUBMIT_FILE_ORIG=${SCRIPTDIR}/../cfg/bi-submit.xml
+SUBMIT_FILE=${REQUEST_DIR}/bi-submit_$(date +%Y%m%d%H%M%S).xml
+STATUS_FILE_ORIG=${SCRIPTDIR}/../cfg/bi-status.xml
+STATUS_FILE=${REQUEST_DIR}/bi-status_$(date +%Y%m%d%H%M%S).xml
 CONNECT_TIMEOUT=120
 MAX_TIME=3600
-URL_PATH="hcmProcFlowCoreController/FlowActionsService"
+URL_PATH="xmlpserver/services/v2/ScheduleService"
 HEADERS="Content-Type:text/xml;charset=UTF-8"
 
 ## monitor loop control
-POLL_INTERVAL=10
+POLL_INTERVAL=60
 POLL_COUNT=30
 
 ## request file configuration literals
@@ -33,8 +34,14 @@ POLL_COUNT=30
 LIT_JOBNAME="JOBNAME"
 LIT_DATESTAMP="DATESTAMP"
 LIT_TIMESTAMP="TIMESTAMP"
+LIT_REMOTEFILE="REMOTEFILE"
+LIT_NOTIFICATIONEMAIL="NOTIFICATIONEMAIL"
+LIT_REPORTFILE="REPORTFILE"
+LIT_REPORTRUNDATE="REPORTRUNDATE"
+LIT_USERNAME="USERNAME"
+LIT_PASSWORD="PASSWORD"
 ## these are the strings to be searched for in the status output
-LIT_COMPLETE="COMPLETED"
+LIT_COMPLETE="Success"
 
 ## return codes
 RC_SUCCESS=0
@@ -49,7 +56,7 @@ RC_GENERAL_ERROR=99
 
 usage ()
 {
-  echo "$0 [params] -- Oracle HCM data extract script
+  echo "$0 [params] -- Oracle BI report execution script
 
   - One curl call is made to trigger a data extraction
   - A second curl call is repeatedly made to monitor the status of the extraction
@@ -57,6 +64,8 @@ usage ()
   The success of the script can be used as a trigger of a subsequent file transfer.
 
 params are
+    -f1 path and file name of SFTP location
+    -f2 path and file name of the BI report file
     -h  show this help message
     -j  HCM job name
     -p  password
@@ -89,6 +98,12 @@ prepare_config_file ()
   sed -i -e "s/${LIT_JOBNAME}/${JOBNAME}/g" ${3}
   sed -i -e "s/${LIT_DATESTAMP}/$(date +%Y-%m-%d)/g" ${3}
   sed -i -e "s/${LIT_TIMESTAMP}/$(date +%H%M%S)/g" ${3}
+  sed -i -e "s/${LIT_REMOTEFILE}/${REMOTEFILE}/g" ${3}
+  sed -i -e "s/${LIT_NOTIFICATIONEMAIL}/${NOTIFICATIONEMAIL}/g" ${3}
+  sed -i -e "s/${LIT_REPORTFILE}/${REPORTFILE}/g" ${3}
+  sed -i -e "s/${LIT_REPORTRUNDATE}/$(date +%d-%m-%Y %H:%M:%S)/g" ${3}
+  sed -i -e "s/${LIT_USERNAME}/${USERNAME}/g" ${3}
+  sed -i -e "s/${LIT_PASSWORD}/${PASSWORD}/g" ${3}
 }
 
 
@@ -156,8 +171,14 @@ if [ $# -eq 0 ] ; then
 fi
 
 # check command line params,
-while getopts ":j:p:s:u:" opt; do
+while getopts ":j:p:s:u:f1:f2:" opt; do
   case ${opt} in
+    f1)
+      REMOTEFILE=${OPTARG}
+    ;;
+    f2)
+      REPORTFILE=${OPTARG}
+    ;;
     j)
       JOBNAME=${OPTARG}
     ;;
