@@ -86,9 +86,9 @@ prepare_config_file ()
   mkdir -p ${REQUEST_DIR} >/dev/null 2>&1
   cp ${2} ${3}
 
-  sed -i -e "s/${LIT_JOBNAME}/${JOBNAME}/g" ${3}
-  sed -i -e "s/${LIT_DATESTAMP}/$(date +%Y-%m-%d)/g" ${3}
-  sed -i -e "s/${LIT_TIMESTAMP}/$(date +%H%M%S)/g" ${3}
+  sed -i -e "s|${LIT_JOBNAME}|${JOBNAME}|g" ${3}
+  sed -i -e "s|${LIT_DATESTAMP}|$(date +%Y-%m-%d)|g" ${3}
+  sed -i -e "s|${LIT_TIMESTAMP}|$(date +%H%M%S)|g" ${3}
 }
 
 
@@ -176,7 +176,10 @@ while getopts ":j:p:s:u:" opt; do
   esac
 done
 
-if [ -z "${JOBNAME}" ] || [ -z "${PASSWORD}" ] || [ -z "${HOST_SERVER}" ] || [ -z "${USERNAME}" ]; then
+if  [ -z "${JOBNAME}" ] || \
+    [ -z "${PASSWORD}" ] || \
+    [ -z "${HOST_SERVER}" ] || \
+    [ -z "${USERNAME}" ]; then
     usage
 fi
 
