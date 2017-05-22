@@ -42,8 +42,9 @@ Script operates identically to hcm-extract.sh with the following changes:
 
 ### Additional parameters
 
-- -f1  path and file name of SFTP location
-- -f2  path and file name of the BI report file
+- -f  path and file name of SFTP location
+- -r  path and file name of the BI report file
+- -t  report template
 
 
 ## Docker

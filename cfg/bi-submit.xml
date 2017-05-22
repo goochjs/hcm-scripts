@@ -21,7 +21,7 @@
                <v2:flattenXML>true</v2:flattenXML>
                <v2:attributeFormat>text</v2:attributeFormat>
                <v2:attributeLocale>en-UK</v2:attributeLocale>
-               <v2:attributeTemplate>assignment</v2:attributeTemplate>
+               <v2:attributeTemplate>TEMPLATE</v2:attributeTemplate>
                <v2:attributeTimezone>Europe/London</v2:attributeTimezone>
                <v2:reportAbsolutePath>REPORTFILE</v2:reportAbsolutePath>
                <v2:parameterNameValues>

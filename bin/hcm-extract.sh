@@ -33,7 +33,7 @@ POLL_COUNT=30
 LIT_JOBNAME="JOBNAME"
 LIT_DATESTAMP="DATESTAMP"
 LIT_TIMESTAMP="TIMESTAMP"
-## these are the strings to be searched for in the status output
+## these are the strings to be searched for in the HTTP responses
 LIT_COMPLETE="COMPLETED"
 
 ## return codes
@@ -192,7 +192,8 @@ prepare_config_file status ${STATUS_FILE_ORIG} ${STATUS_FILE}
 mkdir -p ${RESPONSE_DIR} >/dev/null 2>&1
 
 # submit the HCM job
-call_hcm ${SUBMIT_FILE} ${RESPONSE_DIR}/${SCRIPTNAME}_submit_$(date +%Y%m%d%H%M%S).gz
+RESPONSE_FILE=${RESPONSE_DIR}/${SCRIPTNAME}_submit_$(date +%Y%m%d%H%M%S).gz
+call_hcm ${SUBMIT_FILE} ${RESPONSE_FILE}
 
 # call the HCM status job repeatedly, exiting if complete
 COUNTER=1

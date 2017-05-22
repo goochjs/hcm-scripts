@@ -31,6 +31,7 @@ POLL_COUNT=30
 
 ## request file configuration literals
 ## these strings are in ${SUBMIT_FILE_ORIG} and ${STATUS_FILE_ORIG}
+LIT_JOBID="JOBID"
 LIT_JOBNAME="JOBNAME"
 LIT_DATESTAMP="DATESTAMP"
 LIT_TIMESTAMP="TIMESTAMP"
@@ -38,9 +39,11 @@ LIT_REMOTEFILE="REMOTEFILE"
 LIT_NOTIFICATIONEMAIL="NOTIFICATIONEMAIL"
 LIT_REPORTFILE="REPORTFILE"
 LIT_REPORTRUNDATE="REPORTRUNDATE"
+LIT_TEMPLATE="TEMPLATE"
 LIT_USERNAME="USERNAME"
 LIT_PASSWORD="PASSWORD"
-## these are the strings to be searched for in the status output
+## these are the strings to be searched for in the HTTP responses
+LIT_JOBID_TAG="scheduleReportReturn"
 LIT_COMPLETE="Success"
 
 ## return codes
@@ -64,12 +67,13 @@ usage ()
   The success of the script can be used as a trigger of a subsequent file transfer.
 
 params are
-    -f1 path and file name of SFTP location
-    -f2 path and file name of the BI report file
+    -f  path and file name of SFTP location
     -h  show this help message
     -j  HCM job name
     -p  password
+    -r  path and file name of the BI report file
     -s  host server endpoint url (inc https)
+    -t  report template
     -u  username"
 
   exit ${RC_USAGE}
@@ -95,15 +99,19 @@ prepare_config_file ()
   mkdir -p ${REQUEST_DIR} >/dev/null 2>&1
   cp ${2} ${3}
 
-  sed -i -e "s/${LIT_JOBNAME}/${JOBNAME}/g" ${3}
-  sed -i -e "s/${LIT_DATESTAMP}/$(date +%Y-%m-%d)/g" ${3}
-  sed -i -e "s/${LIT_TIMESTAMP}/$(date +%H%M%S)/g" ${3}
-  sed -i -e "s/${LIT_REMOTEFILE}/${REMOTEFILE}/g" ${3}
-  sed -i -e "s/${LIT_NOTIFICATIONEMAIL}/${NOTIFICATIONEMAIL}/g" ${3}
-  sed -i -e "s/${LIT_REPORTFILE}/${REPORTFILE}/g" ${3}
-  sed -i -e "s/${LIT_REPORTRUNDATE}/$(date +%d-%m-%Y %H:%M:%S)/g" ${3}
-  sed -i -e "s/${LIT_USERNAME}/${USERNAME}/g" ${3}
-  sed -i -e "s/${LIT_PASSWORD}/${PASSWORD}/g" ${3}
+  REPORTRUNDATE=`date "+%d-%m-%Y %H:%M:%S"`
+
+  sed -i -e "s|${LIT_JOBNAME}|${JOBNAME}|g" ${3}
+  sed -i -e "s|${LIT_JOBID}|${JOBID}|g" ${3}
+  sed -i -e "s|${LIT_DATESTAMP}|$(date +%Y-%m-%d)|g" ${3}
+  sed -i -e "s|${LIT_TIMESTAMP}|$(date +%H%M%S)|g" ${3}
+  sed -i -e "s|${LIT_REMOTEFILE}|${REMOTEFILE}|g" ${3}
+  sed -i -e "s|${LIT_NOTIFICATIONEMAIL}|${NOTIFICATIONEMAIL}|g" ${3}
+  sed -i -e "s|${LIT_REPORTFILE}|${REPORTFILE}|g" ${3}
+  sed -i -e "s|${LIT_REPORTRUNDATE}|${REPORTRUNDATE}|g" ${3}
+  sed -i -e "s|${LIT_TEMPLATE}|${TEMPLATE}|g" ${3}
+  sed -i -e "s|${LIT_USERNAME}|${USERNAME}|g" ${3}
+  sed -i -e "s|${LIT_PASSWORD}|${PASSWORD}|g" ${3}
 }
 
 
@@ -127,7 +135,7 @@ call_hcm ()
   fi
 
   # set up the curl command
-  CURL="curl -w %{http_code} --silent --user ${USER_AUTH} --header ${HEADERS} -o ${2} --data @${1} --connect-time ${CONNECT_TIMEOUT} --max-time ${MAX_TIME} ${URL}"
+  CURL="curl -w %{http_code} --silent --user ${USER_AUTH} --header "SOAPAction:ScheduleReport" --header ${HEADERS} -o ${2} --data @${1} --connect-time ${CONNECT_TIMEOUT} --max-time ${MAX_TIME} ${URL}"
 
   # run the curl command, which returns the response code
   HTTP_RESPONSE=$(${CURL})
@@ -171,22 +179,25 @@ if [ $# -eq 0 ] ; then
 fi
 
 # check command line params,
-while getopts ":j:p:s:u:f1:f2:" opt; do
+while getopts ":f:j:p:r:s:t:u:" opt; do
   case ${opt} in
-    f1)
+    f)
       REMOTEFILE=${OPTARG}
-    ;;
-    f2)
-      REPORTFILE=${OPTARG}
-    ;;
+      ;;
     j)
       JOBNAME=${OPTARG}
-    ;;
+      ;;
     p)
       PASSWORD=${OPTARG}
       ;;
+    r)
+      REPORTFILE=${OPTARG}
+      ;;
     s)
       HOST_SERVER=${OPTARG}
+      ;;
+    t)
+      TEMPLATE=${OPTARG}
       ;;
     u)
       USERNAME=${OPTARG}
@@ -197,20 +208,42 @@ while getopts ":j:p:s:u:f1:f2:" opt; do
   esac
 done
 
-if [ -z "${JOBNAME}" ] || [ -z "${PASSWORD}" ] || [ -z "${HOST_SERVER}" ] || [ -z "${USERNAME}" ]; then
+if  [ -z "${REMOTEFILE}" ] || \
+    [ -z "${REPORTFILE}" ] || \
+    [ -z "${JOBNAME}" ] || \
+    [ -z "${PASSWORD}" ] || \
+    [ -z "${HOST_SERVER}" ] || \
+    [ -z "${TEMPLATE}" ] || \
+    [ -z "${USERNAME}" ]; then
     usage
 fi
 
 log "${JOBNAME} started"
 
-# prepare submission and status config files
+# prepare submission config file
 prepare_config_file submit ${SUBMIT_FILE_ORIG} ${SUBMIT_FILE}
-prepare_config_file status ${STATUS_FILE_ORIG} ${STATUS_FILE}
 
 mkdir -p ${RESPONSE_DIR} >/dev/null 2>&1
 
 # submit the HCM job
-call_hcm ${SUBMIT_FILE} ${RESPONSE_DIR}/${SCRIPTNAME}_submit_$(date +%Y%m%d%H%M%S).gz
+RESPONSE_FILE=${RESPONSE_DIR}/${SCRIPTNAME}_submit_$(date +%Y%m%d%H%M%S).gz
+call_hcm ${SUBMIT_FILE} ${RESPONSE_FILE}
+
+# extract the job ID from the response file (it's inside an XML tag called ${LIT_JOBID_TAG})
+#JOBID=`sed -e 's|.*<${LIT_JOBID_TAG}>\(.*\)</${LIT_JOBID_TAG}>.*|\1|g' ${RESPONSE_FILE}`
+JOBID=`sed -e 's|.*<scheduleReportReturn>\(.*\)</scheduleReportReturn>.*|\1|g' ${RESPONSE_FILE}`
+
+CHECKNUMERIC='^[0-9]+$'
+if [[ ${JOBID} =~ ${CHECKNUMERIC} ]]; then
+    log "BI job identifier is ${JOBID}"
+else
+    log "BI job identifier not found in ${RESPONSE_FILE}"
+    cat ${RESPONSE_FILE}
+    exit ${RC_GENERAL_ERROR}
+fi
+
+# prepare status config file
+prepare_config_file status ${STATUS_FILE_ORIG} ${STATUS_FILE}
 
 # call the HCM status job repeatedly, exiting if complete
 COUNTER=1
