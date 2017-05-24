@@ -11,7 +11,6 @@ _DEBUG="off"
 ## script settings
 SCRIPTDIR=$(dirname $0)
 SCRIPTNAME=$(basename $0)
-NOTIFICATIONEMAIL="jeremy.gooch@sainsburys.co.uk"
 
 ## curl control
 REQUEST_DIR="/tmp/${SCRIPTNAME}/request"
@@ -26,7 +25,7 @@ URL_PATH="xmlpserver/services/v2/ScheduleService"
 HEADERS="Content-Type:text/xml;charset=UTF-8"
 
 ## monitor loop control
-POLL_INTERVAL=60
+POLL_INTERVAL=20
 POLL_COUNT=30
 
 ## request file configuration literals
@@ -45,6 +44,7 @@ LIT_PASSWORD="PASSWORD"
 ## these are the strings to be searched for in the HTTP responses
 LIT_JOBID_TAG="scheduleReportReturn"
 LIT_COMPLETE="Success"
+LIT_ERROR="Error"
 
 ## return codes
 RC_SUCCESS=0
@@ -70,6 +70,7 @@ params are
     -f  path and file name of SFTP location
     -h  show this help message
     -j  HCM job name
+    -n  notification email address
     -p  password
     -r  path and file name of the BI report file
     -s  host server endpoint url (inc https)
@@ -90,7 +91,7 @@ prepare_config_file ()
   # The output file will be fed to HCM
 
   if [ ! -f ${2} ]; then
-      log "${1} configuration file ${2} not found!"
+      log "ERROR: ${1} configuration file ${2} not found!"
       exit ${RC_GENERAL_ERROR}
   fi
 
@@ -130,7 +131,7 @@ call_hcm ()
   log "Calling ${URL}"
 
   if [ ! -f ${1} ]; then
-      log "Request file not found ${1}"
+      log "ERROR: request file not found ${1}"
       exit ${RC_GENERAL_ERROR}
   fi
 
@@ -144,9 +145,9 @@ call_hcm ()
       log "Successful call (${HTTP_RESPONSE})"
   else
       log "HTTP response code ${HTTP_RESPONSE}"
-      log "ERROR - SOAP request follows"
+      log "ERROR: SOAP request follows"
       cat ${1}
-      log "ERROR - SOAP response follows"
+      log "ERROR: SOAP response follows"
       gunzip -c ${2}
       exit ${RC_HTTP_ERROR}
   fi
@@ -179,13 +180,16 @@ if [ $# -eq 0 ] ; then
 fi
 
 # check command line params,
-while getopts ":f:j:p:r:s:t:u:" opt; do
+while getopts ":f:j:n:p:r:s:t:u:" opt; do
   case ${opt} in
     f)
       REMOTEFILE=${OPTARG}
       ;;
     j)
       JOBNAME=${OPTARG}
+      ;;
+    n)
+      NOTIFICATIONEMAIL=${OPTARG}
       ;;
     p)
       PASSWORD=${OPTARG}
@@ -211,6 +215,7 @@ done
 if  [ -z "${REMOTEFILE}" ] || \
     [ -z "${REPORTFILE}" ] || \
     [ -z "${JOBNAME}" ] || \
+    [ -z "${NOTIFICATIONEMAIL}" ] || \
     [ -z "${PASSWORD}" ] || \
     [ -z "${HOST_SERVER}" ] || \
     [ -z "${TEMPLATE}" ] || \
@@ -237,7 +242,7 @@ CHECKNUMERIC='^[0-9]+$'
 if [[ ${JOBID} =~ ${CHECKNUMERIC} ]]; then
     log "BI job identifier is ${JOBID}"
 else
-    log "BI job identifier not found in ${RESPONSE_FILE}"
+    log "ERROR: BI job identifier not found in ${RESPONSE_FILE}"
     cat ${RESPONSE_FILE}
     exit ${RC_GENERAL_ERROR}
 fi
@@ -258,6 +263,12 @@ while [ ${COUNTER} -le ${POLL_COUNT} ]; do
   if grep -q ${LIT_COMPLETE} "${RESPONSE_FILE}"; then
      log "Job ${JOBNAME} successfully completed"
      exit ${RC_SUCCESS}
+  fi
+
+  if grep -q ${LIT_ERROR} "${RESPONSE_FILE}"; then
+     log "ERROR: job ${JOBNAME} failed"
+     cat ${RESPONSE_FILE}
+     exit ${RC_GENERAL_ERROR}
   fi
 
   log "${JOBNAME} not yet complete"

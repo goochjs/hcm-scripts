@@ -43,6 +43,7 @@ Script operates identically to hcm-extract.sh with the following changes:
 ### Additional parameters
 
 - -f  path and file name of SFTP location
+- -n  notification email address
 - -r  path and file name of the BI report file
 - -t  report template
 
