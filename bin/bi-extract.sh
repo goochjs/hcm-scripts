@@ -24,10 +24,6 @@ MAX_TIME=3600
 URL_PATH="xmlpserver/services/v2/ScheduleService"
 HEADERS="Content-Type:text/xml;charset=UTF-8"
 
-## monitor loop control
-POLL_INTERVAL=20
-POLL_COUNT=30
-
 ## request file configuration literals
 ## these strings are in ${SUBMIT_FILE_ORIG} and ${STATUS_FILE_ORIG}
 LIT_JOBID="JOBID"
@@ -70,12 +66,14 @@ params are
     -f  path and file name of SFTP location
     -h  show this help message
     -j  HCM job name
+    -l  number of times to poll when checking status
     -n  notification email address
     -p  password
     -r  path and file name of the BI report file
     -s  host server endpoint url (inc https)
     -t  report template
-    -u  username"
+    -u  username
+    -w  wait time (in seconds) between status checks"
 
   exit ${RC_USAGE}
 }
@@ -180,13 +178,16 @@ if [ $# -eq 0 ] ; then
 fi
 
 # check command line params,
-while getopts ":f:j:n:p:r:s:t:u:" opt; do
+while getopts ":f:j:l:n:p:r:s:t:u:w:" opt; do
   case ${opt} in
     f)
       REMOTEFILE=${OPTARG}
       ;;
     j)
       JOBNAME=${OPTARG}
+      ;;
+    l)
+      POLL_COUNT=${OPTARG}
       ;;
     n)
       NOTIFICATIONEMAIL=${OPTARG}
@@ -206,6 +207,9 @@ while getopts ":f:j:n:p:r:s:t:u:" opt; do
     u)
       USERNAME=${OPTARG}
       ;;
+    w)
+      POLL_INTERVAL=${OPTARG}
+      ;;
     *)
       usage
       ;;
@@ -215,12 +219,21 @@ done
 if  [ -z "${REMOTEFILE}" ] || \
     [ -z "${REPORTFILE}" ] || \
     [ -z "${JOBNAME}" ] || \
+    [ -z "${POLL_COUNT}" ] || \
     [ -z "${NOTIFICATIONEMAIL}" ] || \
     [ -z "${PASSWORD}" ] || \
     [ -z "${HOST_SERVER}" ] || \
     [ -z "${TEMPLATE}" ] || \
-    [ -z "${USERNAME}" ]; then
+    [ -z "${USERNAME}" ] || \
+    [ -z "${POLL_INTERVAL}" ]; then
     usage
+fi
+
+if  [[ ! ${POLL_COUNT} =~ ^-?[0-9]+$ ]] || \
+    [[ ! ${POLL_INTERVAL} =~ ^-?[0-9]+$ ]]; then
+
+    echo "Wait time (-w) and loop count (-l) must be integers"
+    exit ${RC_USAGE}
 fi
 
 log "${JOBNAME} started"

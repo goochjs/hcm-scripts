@@ -24,10 +24,6 @@ MAX_TIME=3600
 URL_PATH="hcmProcFlowCoreController/FlowActionsService"
 HEADERS="Content-Type:text/xml;charset=UTF-8"
 
-## monitor loop control
-POLL_INTERVAL=10
-POLL_COUNT=30
-
 ## request file configuration literals
 ## these strings are in ${SUBMIT_FILE_ORIG} and ${STATUS_FILE_ORIG}
 LIT_JOBNAME="JOBNAME"
@@ -59,9 +55,11 @@ usage ()
 params are
     -h  show this help message
     -j  HCM job name
+    -l  number of times to poll when checking status
     -p  password
     -s  host server endpoint url (inc https)
-    -u  username"
+    -u  username
+    -w  wait time (in seconds) between status checks"
 
   exit ${RC_USAGE}
 }
@@ -156,31 +154,46 @@ if [ $# -eq 0 ] ; then
 fi
 
 # check command line params,
-while getopts ":j:p:s:u:" opt; do
+while getopts ":j:l:p:s:u:w:" opt; do
   case ${opt} in
     j)
       JOBNAME=${OPTARG}
     ;;
+    l)
+      POLL_COUNT=${OPTARG}
+    ;;
     p)
       PASSWORD=${OPTARG}
-      ;;
+    ;;
     s)
       HOST_SERVER=${OPTARG}
-      ;;
+    ;;
     u)
       USERNAME=${OPTARG}
-      ;;
+    ;;
+    w)
+      POLL_INTERVAL=${OPTARG}
+    ;;
     *)
       usage
-      ;;
+    ;;
   esac
 done
 
 if  [ -z "${JOBNAME}" ] || \
+    [ -z "${POLL_COUNT}" ] || \
     [ -z "${PASSWORD}" ] || \
     [ -z "${HOST_SERVER}" ] || \
-    [ -z "${USERNAME}" ]; then
+    [ -z "${USERNAME}" ] || \
+    [ -z "${POLL_INTERVAL}" ]; then
     usage
+fi
+
+if  [[ ! ${POLL_COUNT} =~ ^-?[0-9]+$ ]] || \
+    [[ ! ${POLL_INTERVAL} =~ ^-?[0-9]+$ ]]; then
+
+    echo "Wait time (-w) and loop count (-l) must be integers"
+    exit ${RC_USAGE}
 fi
 
 log "${JOBNAME} started"

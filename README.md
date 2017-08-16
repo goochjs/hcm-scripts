@@ -23,9 +23,11 @@ The success of the script can be used as a trigger of a subsequent file transfer
 ### Parameters
 
 - -j  HCM job name
+- -l  number of times to poll when checking status
 - -p  password
 - -s  host server endpoint url (inc https)
 - -u  username
+- -w  wait time (in seconds) between status checks
 
 
 ### Return codes
