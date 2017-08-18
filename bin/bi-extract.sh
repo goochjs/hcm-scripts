@@ -19,8 +19,8 @@ SUBMIT_FILE_ORIG=${SCRIPTDIR}/../cfg/bi-submit.xml
 SUBMIT_FILE=${REQUEST_DIR}/bi-submit_$(date +%Y%m%d%H%M%S).xml
 STATUS_FILE_ORIG=${SCRIPTDIR}/../cfg/bi-status.xml
 STATUS_FILE=${REQUEST_DIR}/bi-status_$(date +%Y%m%d%H%M%S).xml
-CONNECT_TIMEOUT=120
-MAX_TIME=3600
+CONNECT_TIMEOUT=5
+MAX_TIME=30
 URL_PATH="xmlpserver/services/v2/ScheduleService"
 HEADERS="Content-Type:text/xml;charset=UTF-8"
 
