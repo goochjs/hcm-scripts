@@ -3,11 +3,20 @@
 These scripts automate the extraction and monitoring of Oracle HCM data.
 
 
+## Pre-requisites
+
+- Linux
+- bash
+- curl
+- sed (GNU compliant)
+
+
 ## Deployment
 
 Clone the whole repo to wherever you want or, at the very least, copy the /bin and /cfg folders.
 
-Note that the scripts have configuration variables defined, named `POLL_INTERVAL` and `POLL_COUNT`.  These drive the loop, through which the scripts check whether the extract jobs have completed.  They may need amending, dependent on the length of time the longest Oracle job takes to execute.  The `POLL_INTERVAL` setting in measured in seconds.
+Note that the scripts have configuration variables defined, named `CONNECT_TIMEOUT` and `MAX_TIME`.  These drive the web service calls.  The former defines how many seconds the script will wait on making each web service call, before reporting a connection timeout.  The latter defines how the maximum time (in seconds) the script will wait for each individual web service call to complete.  These may need to be adjusted, depending on the performance of Oracle HCM.
+
 
 
 ## hcm-extract.sh
