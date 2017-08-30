@@ -84,9 +84,20 @@ prepare_config_file ()
   mkdir -p ${REQUEST_DIR} >/dev/null 2>&1
   cp ${2} ${3}
 
-  sed -i -e "s|${LIT_JOBNAME}|${JOBNAME}|g" ${3}
-  sed -i -e "s|${LIT_DATESTAMP}|$(date +%Y-%m-%d)|g" ${3}
-  sed -i -e "s|${LIT_TIMESTAMP}|$(date +%H%M%S)|g" ${3}
+  find_replace "${LIT_JOBNAME}" "${JOBNAME}" "${3}"
+  find_replace "${LIT_DATESTAMP}" $(date +%Y-%m-%d) "${3}"
+  find_replace "${LIT_TIMESTAMP}" $(date +%H%M%S) "${3}"
+}
+
+
+find_replace ()
+{
+    # Take two strings and a file as parameters
+    # Replace all instances of the first string in the file with the second string
+
+    TMP=$(mktemp)
+    sed "s|${1}|${2}|g" ${3} > ${TMP} && mv ${TMP} ${3}
+    rm ${TMP} 2> /dev/null
 }
 
 

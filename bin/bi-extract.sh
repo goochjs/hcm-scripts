@@ -100,17 +100,28 @@ prepare_config_file ()
 
   REPORTRUNDATE=`date "+%d-%m-%Y %H:%M:%S"`
 
-  sed -i -e "s|${LIT_JOBNAME}|${JOBNAME}|g" ${3}
-  sed -i -e "s|${LIT_JOBID}|${JOBID}|g" ${3}
-  sed -i -e "s|${LIT_DATESTAMP}|$(date +%Y-%m-%d)|g" ${3}
-  sed -i -e "s|${LIT_TIMESTAMP}|$(date +%H%M%S)|g" ${3}
-  sed -i -e "s|${LIT_REMOTEFILE}|${REMOTEFILE}|g" ${3}
-  sed -i -e "s|${LIT_NOTIFICATIONEMAIL}|${NOTIFICATIONEMAIL}|g" ${3}
-  sed -i -e "s|${LIT_REPORTFILE}|${REPORTFILE}|g" ${3}
-  sed -i -e "s|${LIT_REPORTRUNDATE}|${REPORTRUNDATE}|g" ${3}
-  sed -i -e "s|${LIT_TEMPLATE}|${TEMPLATE}|g" ${3}
-  sed -i -e "s|${LIT_USERNAME}|${USERNAME}|g" ${3}
-  sed -i -e "s|${LIT_PASSWORD}|${PASSWORD}|g" ${3}
+  find_replace "${LIT_JOBNAME}" "${JOBNAME}" "${3}"
+  find_replace "${LIT_JOBID}" "${JOBID}" "${3}"
+  find_replace "${LIT_DATESTAMP}" $(date +%Y-%m-%d) "${3}"
+  find_replace "${LIT_TIMESTAMP}" $(date +%H%M%S) "${3}"
+  find_replace "${LIT_REMOTEFILE}" "${REMOTEFILE}" "${3}"
+  find_replace "${LIT_NOTIFICATIONEMAIL}" "${NOTIFICATIONEMAIL}" "${3}"
+  find_replace "${LIT_REPORTFILE}" "${REPORTFILE}" "${3}"
+  find_replace "${LIT_REPORTRUNDATE}" "${REPORTRUNDATE}" "${3}"
+  find_replace "${LIT_TEMPLATE}" "${TEMPLATE}" "${3}"
+  find_replace "${LIT_USERNAME}" "${USERNAME}" "${3}"
+  find_replace "${LIT_PASSWORD}" "${PASSWORD}" "${3}"
+}
+
+
+find_replace ()
+{
+    # Take two strings and a file as parameters
+    # Replace all instances of the first string in the file with the second string
+
+    TMP=$(mktemp)
+    sed "s|${1}|${2}|g" ${3} > ${TMP} && mv ${TMP} ${3}
+    rm ${TMP} 2> /dev/null
 }
 
 

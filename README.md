@@ -3,14 +3,6 @@
 These scripts automate the extraction and monitoring of Oracle HCM data.
 
 
-## Pre-requisites
-
-- Linux
-- bash
-- curl
-- sed (GNU compliant)
-
-
 ## Deployment
 
 Clone the whole repo to wherever you want or, at the very least, copy the /bin and /cfg folders.
